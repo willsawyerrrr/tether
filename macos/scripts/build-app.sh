@@ -4,8 +4,7 @@
 # Usage: scripts/build-app.sh [--install] [output-dir] [version]
 #
 # `--install` also copies the app to /Applications and links `tether` into
-# /usr/local/bin. Extra `swift build` flags (e.g. `--disable-sandbox`, needed inside
-# Homebrew's build sandbox) are read from `SWIFT_BUILD_FLAGS`.
+# /usr/local/bin.
 set -euo pipefail
 
 install=false
@@ -19,9 +18,8 @@ out="${1:-.build/app}"
 version="${2:-0.0.0}"
 app="$out/Tether.app"
 
-read -r -a flags <<< "${SWIFT_BUILD_FLAGS:-}"
-swift build -c release ${flags[@]+"${flags[@]}"}
-bin="$(swift build -c release --show-bin-path ${flags[@]+"${flags[@]}"})"
+swift build -c release
+bin="$(swift build -c release --show-bin-path)"
 
 rm -r "$app" 2>/dev/null || true
 mkdir -p "$app/Contents/MacOS"

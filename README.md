@@ -20,10 +20,10 @@ Studio); see that directory's README for setup.
 
 ## Installing
 
-The macOS app is available via Homebrew:
+The macOS app is available as a Homebrew cask:
 
 ```
-brew install willsawyerrrr/tap/tether
+brew install --cask willsawyerrrr/tap/tether
 ```
 
 See [`macos/README.md`](macos/README.md#installing) for details.
