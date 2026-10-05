@@ -20,8 +20,7 @@ public sealed class DirectoryStore
 
     /// <summary>
     /// Loads the persisted directory records, or an empty list if none have been saved yet or the
-    /// file cannot be read. Also understands the plain path-array format saved before a record
-    /// carried a process id, treating every entry from it as having none.
+    /// file cannot be read or parsed.
     /// </summary>
     public List<DirectoryRecord> Load()
     {
@@ -33,22 +32,7 @@ public sealed class DirectoryStore
             }
 
             var json = File.ReadAllText(FilePath);
-
-            try
-            {
-                var records = JsonSerializer.Deserialize<List<DirectoryRecord>>(json);
-                if (records is not null)
-                {
-                    return records;
-                }
-            }
-            catch (JsonException)
-            {
-                // Not the current format — fall through and try the legacy one below.
-            }
-
-            var paths = JsonSerializer.Deserialize<List<string>>(json);
-            return paths?.Select(p => new DirectoryRecord { Path = p }).ToList() ?? new List<DirectoryRecord>();
+            return JsonSerializer.Deserialize<List<DirectoryRecord>>(json) ?? new List<DirectoryRecord>();
         }
         catch (Exception)
         {
