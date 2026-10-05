@@ -14,8 +14,8 @@ brew install willsawyerrrr/tap/tether
 ```
 
 This builds the app from source (Xcode required) and puts the `tether`
-command on your `PATH`. Keep the app running in the
-background across logins with `brew services start tether`.
+command on your `PATH`. Turn on "Launch at Login" in the menu bar popover to
+start the app at every login.
 
 ## Structure
 
@@ -66,6 +66,8 @@ running.
 
 ## Notes
 
+- "Launch at Login" registers the app with `SMAppService.mainApp`, so it only
+  takes effect for the installed `Tether.app` bundle (not `swift run`).
 - The directory list persists across launches at
   `~/Library/Application Support/Tether/directories.json`.
   Quitting the app leaves any running servers running, so they keep fronting
