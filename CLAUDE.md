@@ -32,6 +32,27 @@ toolkit.
   share or multiplex themselves — `claude remote-control` handles that
   internally.
 
+## Structure
+
+- `macos/` (SwiftPM): `Tether` menu bar app; `TetherIPC` library holding the
+  control protocol (newline-terminated JSON `ControlRequest`/`ControlResponse`
+  for `add`/`remove`/`start`/`stop`) and the Unix socket helpers; `tetherctl`
+  CLI client (symlinked as `tether`). The app listens on
+  `~/Library/Application Support/Tether/tether.sock`; `tetherctl` connects to it.
+- `windows/Tether/` (.NET 8): tray app; no CLI or control socket.
+- Persistence: each app saves its added directories as `directories.json` —
+  macOS in `~/Library/Application Support/Tether/`, Windows in
+  `%APPDATA%\Tether\`.
+
+## CI
+
+`.github/workflows/ci.yml` runs on pushes and PRs to `main`. A path filter gates
+the `macos` (`swift build`) and `windows` (`dotnet build -c Release`) jobs on
+changes under `macos/**` and `windows/**` (always run on push). The `CI Status`
+job aggregates them and is the single required check, so a PR touching one app
+isn't blocked on the other's skipped job. `release.yml` reuses the shared
+workflow in `willsawyerrrr/platform` (see Releases).
+
 ## Conventions
 
 Standard [willsawyerrrr.dev conventions](../../CLAUDE.md) apply: branch per
