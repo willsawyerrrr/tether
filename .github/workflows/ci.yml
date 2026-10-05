@@ -39,6 +39,9 @@ jobs:
       - name: Build
         run: dotnet build -c Release
         working-directory: windows/Tether
+      - name: Test
+        run: dotnet test -c Release
+        working-directory: windows/Tether.Tests
 
   macos:
     needs: changes
