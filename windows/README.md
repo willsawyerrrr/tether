@@ -23,6 +23,17 @@ dotnet run
 or open the `windows/Tether/` folder directly in Visual Studio
 (File → Open → Folder) and run/debug from there — no `.sln` is needed.
 
+## Testing
+
+From `windows/Tether.Tests/`:
+
+```
+dotnet test
+```
+
+The xUnit project covers the pure helpers (`AnsiStripper`, `WslPath`) and
+runs in CI.
+
 ## Usage
 
 - Left- or right-click the tray icon for the context menu.
