@@ -25,5 +25,10 @@ let package = Package(
             dependencies: ["TetherIPC"],
             path: "Sources/TetherCLI"
         ),
+        .testTarget(
+            name: "TetherTests",
+            dependencies: ["Tether", "TetherIPC"],
+            path: "Tests/TetherTests"
+        ),
     ]
 )
