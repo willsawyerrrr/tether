@@ -3,6 +3,9 @@
 #
 # Usage: scripts/build-app.sh [--install] [output-dir] [version]
 #
+# Signs with the Developer ID identity in `SIGNING_IDENTITY` (hardened runtime,
+# secure timestamp) when set, ad hoc otherwise.
+#
 # `--install` also copies the app to /Applications and links `tether` into
 # /usr/local/bin.
 set -euo pipefail
@@ -25,7 +28,13 @@ rm -r "$app" 2>/dev/null || true
 mkdir -p "$app/Contents/MacOS"
 cp "$bin/Tether" "$bin/tetherctl" "$app/Contents/MacOS/"
 sed "s/__VERSION__/$version/g" Resources/Info.plist > "$app/Contents/Info.plist"
-codesign --force --sign - --deep "$app"
+if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
+    for target in "$app/Contents/MacOS/tetherctl" "$app/Contents/MacOS/Tether" "$app"; do
+        codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$target"
+    done
+else
+    codesign --force --sign - --deep "$app"
+fi
 echo "Built $app"
 
 if $install; then
