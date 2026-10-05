@@ -13,3 +13,4 @@ macos/**/.swiftpm/
 windows/**/bin/
 windows/**/obj/
 windows/**/.vs/
+/Tether.zip

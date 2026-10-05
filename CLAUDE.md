@@ -42,8 +42,14 @@ lifecycle end to end.
 
 Every merge to `main` publishes a GitHub release (`.github/workflows/release.yml`):
 a `feat` commit bumps the minor version, anything else the patch version. The
-release builds `Tether.app` with `macos/scripts/build-app.sh`, zips it with
-`ditto` to `Tether.zip`, and uploads that asset to the release. The shared
+release builds `Tether.app` with `macos/scripts/package-app.sh`, which signs it
+with the Developer ID identity (hardened runtime), notarises and staples it, and
+zips it to `Tether.zip`; that asset is uploaded to the release. Signing and
+notarisation use the repository secrets `DEVELOPER_ID_P12`,
+`DEVELOPER_ID_P12_PASSWORD`, `NOTARY_KEY` (App Store Connect `.p8`),
+`NOTARY_KEY_ID`, and `NOTARY_ISSUER_ID`, which the shared workflow exposes to the
+build as `SIGNING_IDENTITY` and `NOTARY_KEY_PATH`/`NOTARY_KEY_ID`/`NOTARY_ISSUER_ID`;
+without them the build is ad-hoc signed and not notarised. The shared
 workflow then commits the new version and sha256 to `Casks/tether.rb` in
 `willsawyerrrr/homebrew-tap`, so `brew upgrade --cask tether` picks it up
 immediately. Releases created by hand (`gh release create`) trigger the same

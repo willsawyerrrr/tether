@@ -43,9 +43,18 @@ This is a Swift Package Manager package, not an `.xcodeproj`:
 ## Building the app bundle
 
 `scripts/build-app.sh [--install] [output-dir] [version]` builds `Tether.app`
-(ad-hoc signed, with `tetherctl` alongside the app in `Contents/MacOS/`) into
-`output-dir` (default `.build/app`). `--install` also copies it to
+(with `tetherctl` alongside the app in `Contents/MacOS/`) into `output-dir`
+(default `.build/app`). It is ad-hoc signed unless `SIGNING_IDENTITY` names a
+Developer ID Application identity, in which case each executable and the
+bundle are signed with the hardened runtime and a secure timestamp. The app
+needs no entitlements. `--install` also copies it to
 `/Applications` and links it into `/usr/local/bin` as `tether`.
+
+`scripts/package-app.sh [version]` builds the app and zips it to `Tether.zip`
+at the repository root. When `NOTARY_KEY_PATH`, `NOTARY_KEY_ID`, and
+`NOTARY_ISSUER_ID` are set, it also notarises the zip with `notarytool`
+(failing, with the log, unless Accepted), staples the ticket to the app, and
+re-zips.
 
 ## Command line
 

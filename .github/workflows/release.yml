@@ -16,6 +16,5 @@ jobs:
       cask: tether
       asset: Tether.zip
       build-command: |
-        macos/scripts/build-app.sh .build/app "$VERSION"
-        ditto -c -k --keepParent macos/.build/app/Tether.app Tether.zip
+        macos/scripts/package-app.sh "$VERSION"
     secrets: inherit
