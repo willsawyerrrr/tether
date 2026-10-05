@@ -10,12 +10,11 @@ Targets macOS 13+.
 ## Installing
 
 ```
-brew install willsawyerrrr/tap/tether
+brew install --cask willsawyerrrr/tap/tether
 ```
 
-This builds the app from source (Xcode required) and puts the `tether`
-command on your `PATH`. Keep the app running in the
-background across logins with `brew services start tether`.
+This installs `Tether.app` into `/Applications` and puts the `tether` command
+on your `PATH`.
 
 ## Structure
 
@@ -60,7 +59,7 @@ tether start [directory]
 tether stop [directory]
 ```
 
-`directory` defaults to the current directory. `brew install` or
+`directory` defaults to the current directory. `brew install --cask` or
 `scripts/build-app.sh --install` puts it on your `PATH`; the app must be
 running.
 

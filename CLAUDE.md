@@ -42,8 +42,9 @@ lifecycle end to end.
 
 Every merge to `main` publishes a GitHub release (`.github/workflows/release.yml`):
 a `feat` commit bumps the minor version, anything else the patch version. The
-release then calls `.github/workflows/homebrew.yml`, which commits the new
-tarball URL and sha256 to `willsawyerrrr/homebrew-tap` so `brew upgrade tether`
-picks it up immediately. It pushes with the `TAP_DEPLOY_KEY` secret, a write
-deploy key scoped to that repo. Releases created by hand (`gh release create`)
-trigger the same Homebrew update.
+release builds `Tether.app` with `macos/scripts/build-app.sh`, zips it with
+`ditto` to `Tether.zip`, and uploads that asset to the release. The shared
+workflow then commits the new version and sha256 to `Casks/tether.rb` in
+`willsawyerrrr/homebrew-tap`, so `brew upgrade --cask tether` picks it up
+immediately. Releases created by hand (`gh release create`) trigger the same
+update.
