@@ -26,12 +26,14 @@ This is a Swift Package Manager package, not an `.xcodeproj`:
   by the app and the CLI.
 - `Sources/TetherCLI/` — the `tether` command-line client (built as `tetherctl`,
   so it can sit beside the app executable in the bundle).
+- `Tests/TetherTests/` — XCTest suite for the output parser, `SessionStatus`,
+  and the control protocol coding.
 - `Sources/Tether/` — app source.
   - `TetherApp.swift` — `MenuBarExtra` scene and app delegate
     (accessory activation policy).
   - `Models/` — `SessionStatus`, `DirectoryRecord`, `ManagedDirectory`.
-  - `Services/` — `RemoteControlProcess` (spawns and parses
-    `claude remote-control`), `DirectoryStore` (persistence), `AppModel`
+  - `Services/` — `RemoteControlProcess` (spawns
+    `claude remote-control`), `OutputParser` (parses its output), `DirectoryStore` (persistence), `AppModel`
     (app-wide state), `ControlServer` (the control socket `tether` talks to).
   - `Views/` — `MenuBarContentView`, `DirectoryRowView`.
 
@@ -39,6 +41,10 @@ This is a Swift Package Manager package, not an `.xcodeproj`:
 
 - In Xcode: `open Package.swift`, then run the `Tether` scheme.
 - From the command line: `swift run` (from this directory).
+
+## Testing
+
+`swift test` (from this directory).
 
 ## Building the app bundle
 

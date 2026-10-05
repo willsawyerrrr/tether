@@ -44,11 +44,17 @@ toolkit.
   macOS in `~/Library/Application Support/Tether/`, Windows in
   `%APPDATA%\Tether\`.
 
+## Testing
+
+macOS: XCTest target `TetherTests` (`macos/Tests/TetherTests/`), run with
+`swift test` from `macos/`. Parsing of `claude remote-control` output lives in
+`OutputParser` so it can be tested without spawning a process.
+
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes and PRs to `main`. A path filter gates
-the `macos` (`swift build`) and `windows` (`dotnet build -c Release`) jobs on
-changes under `macos/**` and `windows/**` (always run on push). The `CI Status`
+the `macos` (`swift build` and `swift test`) and `windows`
+(`dotnet build -c Release`) jobs on changes under `macos/**` and `windows/**` (always run on push). The `CI Status`
 job aggregates them and is the single required check, so a PR touching one app
 isn't blocked on the other's skipped job. Runs are grouped by workflow and ref;
 a newer push cancels an in-progress PR run but never a `main` run. `release.yml` reuses the shared

@@ -52,6 +52,9 @@ jobs:
       - name: Build
         run: swift build
         working-directory: macos
+      - name: Test
+        run: swift test
+        working-directory: macos
 
   # A single check to require in branch protection, so a PR that only touches
   # one app isn't blocked on a job that never ran for it: windows/macos are

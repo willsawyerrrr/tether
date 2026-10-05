@@ -5,21 +5,6 @@ import Foundation
 final class RemoteControlProcess {
     typealias StatusHandler = (SessionStatus) -> Void
 
-    // Matches ANSI CSI sequences: ESC '[' followed by parameter bytes (0x30-0x3F), intermediate
-    // bytes (0x20-0x2F), and a final byte (0x40-0x7E).
-    private static let ansiEscapePattern = try! NSRegularExpression(
-        pattern: "\u{1B}\\[[0-?]*[ -/]*[@-~]"
-    )
-    private static let joinURLPattern = try! NSRegularExpression(
-        pattern: "https://claude\\.ai/code\\?environment=[A-Za-z0-9_-]+"
-    )
-    // Matches diagnostics the login shell prints while sourcing the user's rc files, e.g.
-    // `(eval):1: can't change option: zle`.
-    private static let shellNoisePattern = try! NSRegularExpression(
-        pattern: "^\\(eval\\):\\d+: .*$\\n?", options: .anchorsMatchLines
-    )
-    private static let workspaceNotTrustedMarker = "Workspace not trusted"
-
     /// Diagnostic output is capped to this many characters to bound memory use.
     private static let maxBufferedCharacters = 20_000
 
@@ -110,16 +95,16 @@ final class RemoteControlProcess {
 
         guard !didReportReady else { return }
 
-        let stripped = Self.stripANSI(outputBuffer)
+        let stripped = OutputParser.stripANSI(outputBuffer)
 
-        if let joinURL = Self.firstMatch(of: Self.joinURLPattern, in: stripped) {
+        if let joinURL = OutputParser.joinURL(in: stripped) {
             didReportReady = true
             onStatusChange(.ready(joinURL: joinURL))
             return
         }
 
-        if stripped.contains(Self.workspaceNotTrustedMarker) {
-            onStatusChange(.error(message: Self.workspaceNotTrustedLine(in: stripped)))
+        if stripped.contains(OutputParser.workspaceNotTrustedMarker) {
+            onStatusChange(.error(message: OutputParser.workspaceNotTrustedLine(in: stripped)))
         }
     }
 
@@ -136,12 +121,12 @@ final class RemoteControlProcess {
                 return
             }
 
-            let stripped = Self.stripANSI(self.outputBuffer)
+            let stripped = OutputParser.stripANSI(self.outputBuffer)
 
-            if stripped.contains(Self.workspaceNotTrustedMarker) {
-                self.onStatusChange(.error(message: Self.workspaceNotTrustedLine(in: stripped)))
+            if stripped.contains(OutputParser.workspaceNotTrustedMarker) {
+                self.onStatusChange(.error(message: OutputParser.workspaceNotTrustedLine(in: stripped)))
             } else if finishedProcess.terminationStatus != 0 {
-                let tail = Self.removingShellNoise(from: stripped).suffix(500)
+                let tail = OutputParser.removingShellNoise(from: stripped).suffix(500)
                 self.onStatusChange(
                     .error(
                         message: "claude remote-control exited unexpectedly "
@@ -152,33 +137,5 @@ final class RemoteControlProcess {
                 self.onStatusChange(.stopped)
             }
         }
-    }
-
-    private static func workspaceNotTrustedLine(in strippedText: String) -> String {
-        strippedText
-            .split(separator: "\n")
-            .first(where: { $0.contains(workspaceNotTrustedMarker) })
-            .map(String.init)
-            ?? "Workspace not trusted."
-    }
-
-    private static func removingShellNoise(from text: String) -> String {
-        let range = NSRange(text.startIndex..., in: text)
-        return shellNoisePattern.stringByReplacingMatches(in: text, range: range, withTemplate: "")
-    }
-
-    private static func stripANSI(_ text: String) -> String {
-        let range = NSRange(text.startIndex..., in: text)
-        return ansiEscapePattern.stringByReplacingMatches(in: text, range: range, withTemplate: "")
-    }
-
-    private static func firstMatch(of regex: NSRegularExpression, in text: String) -> String? {
-        let range = NSRange(text.startIndex..., in: text)
-        guard let match = regex.firstMatch(in: text, range: range),
-            let matchRange = Range(match.range, in: text)
-        else {
-            return nil
-        }
-        return String(text[matchRange])
     }
 }
