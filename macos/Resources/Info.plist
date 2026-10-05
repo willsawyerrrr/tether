@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Tether</string>
 	<key>CFBundleIdentifier</key>
-	<string>dev.willsawyerrrr.Tether</string>
+	<string>dev.willsawyerrrr.tether</string>
 	<key>CFBundleName</key>
 	<string>Tether</string>
 	<key>CFBundleDisplayName</key>
