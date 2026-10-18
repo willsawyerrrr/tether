@@ -41,7 +41,10 @@ toolkit.
   `~/Library/Application Support/Tether/tether.sock`; `tetherctl` connects to it.
 - `windows/Tether/` (.NET 8): tray app; no CLI or control socket.
 - `assets/logo.png`: app logo (1024x1024), generated with the platform repo's
-  `scripts/generate-logo`.
+  `scripts/generate-logo`. `scripts/generate-icons.sh` crops it to
+  `assets/icon.png` and derives `macos/Resources/Tether.icns` (bundled as the
+  app icon by `build-app.sh`) and `windows/Tether/Tether.ico` (the exe's
+  `ApplicationIcon` and the tray icon).
 - Persistence: each app saves its added directories as `directories.json` —
   macOS in `~/Library/Application Support/Tether/`, Windows in
   `%APPDATA%\Tether\`.

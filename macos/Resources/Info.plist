@@ -6,6 +6,8 @@
 	<string>Tether</string>
 	<key>CFBundleIdentifier</key>
 	<string>dev.willsawyerrrr.tether</string>
+	<key>CFBundleIconFile</key>
+	<string>Tether</string>
 	<key>CFBundleName</key>
 	<string>Tether</string>
 	<key>CFBundleDisplayName</key>
