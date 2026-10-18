@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="Tether logo" width="128"></p>
+
 # Tether for Claude Code
 
 [![CI](https://github.com/willsawyerrrr/tether/actions/workflows/ci.yml/badge.svg)](https://github.com/willsawyerrrr/tether/actions/workflows/ci.yml)

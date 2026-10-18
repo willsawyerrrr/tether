@@ -40,6 +40,8 @@ toolkit.
   CLI client (symlinked as `tether`). The app listens on
   `~/Library/Application Support/Tether/tether.sock`; `tetherctl` connects to it.
 - `windows/Tether/` (.NET 8): tray app; no CLI or control socket.
+- `assets/logo.png`: app logo (1024x1024), generated with the platform repo's
+  `scripts/generate-logo`.
 - Persistence: each app saves its added directories as `directories.json` —
   macOS in `~/Library/Application Support/Tether/`, Windows in
   `%APPDATA%\Tether\`.
