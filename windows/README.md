@@ -2,12 +2,12 @@
 
 Native Windows system tray app for managing `claude remote-control` server
 sessions, one per directory. Built with WinForms
-(`System.Windows.Forms.NotifyIcon`) targeting `net8.0-windows`. There's no
+(`System.Windows.Forms.NotifyIcon`) targeting `net10.0-windows`. There's no
 main window — everything happens through the tray icon's context menu.
 
 ## Requirements
 
-- Windows, with the .NET 8 SDK and the "Windows Desktop" (WinForms) workload.
+- Windows, with the .NET 10 SDK and the "Windows Desktop" (WinForms) workload.
 - The `claude` CLI on `PATH`, logged in, with a Claude subscription.
 - Each directory you manage must already have had its Claude Code workspace
   trust dialog accepted (run `claude` in it once, interactively, first).

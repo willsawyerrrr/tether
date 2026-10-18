@@ -39,7 +39,7 @@ toolkit.
   for `add`/`remove`/`start`/`stop`) and the Unix socket helpers; `tetherctl`
   CLI client (symlinked as `tether`). The app listens on
   `~/Library/Application Support/Tether/tether.sock`; `tetherctl` connects to it.
-- `windows/Tether/` (.NET 8): tray app; no CLI or control socket.
+- `windows/Tether/` (.NET 10): tray app; no CLI or control socket.
 - `assets/logo.png`: app logo (1024x1024), generated with the platform repo's
   `scripts/generate-logo`. `scripts/generate-icons.sh` crops it to
   `assets/icon.png` and derives `macos/Resources/Tether.icns` (bundled as the
@@ -68,6 +68,8 @@ workflow in `willsawyerrrr/platform` (see Releases).
 ## Runtime parity
 
 The macOS app builds with Xcode 26.6 in CI, local development and release: `ci.yml` pins `macos-26` and `maxim-lobanov/setup-xcode` to `26.6`, and `.xcode-version` records it. Bump all of them together.
+
+The Windows app runs on .NET 10 in CI and local development (it has no production release, so the newest LTS sets the version): `TargetFramework` in both csprojs, `windows/global.json`, `actions/setup-dotnet` in `ci.yml` and the pinned `windows-2025` runner all use it. Bump them together.
 
 ## Conventions
 
