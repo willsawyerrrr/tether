@@ -65,6 +65,10 @@ isn't blocked on the other's skipped job. Runs are grouped by workflow and ref;
 a newer push cancels an in-progress PR run but never a `main` run. `release.yml` reuses the shared
 workflow in `willsawyerrrr/platform` (see Releases).
 
+## Runtime parity
+
+The macOS app builds with Xcode 26.6 in CI, local development and release: `ci.yml` pins `macos-26` and `maxim-lobanov/setup-xcode` to `26.6`, and `.xcode-version` records it. Bump all of them together.
+
 ## Conventions
 
 Standard [willsawyerrrr.dev conventions](../../CLAUDE.md) apply: branch per
