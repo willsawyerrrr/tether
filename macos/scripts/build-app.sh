@@ -25,8 +25,9 @@ swift build -c release
 bin="$(swift build -c release --show-bin-path)"
 
 rm -r "$app" 2>/dev/null || true
-mkdir -p "$app/Contents/MacOS"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin/Tether" "$bin/tetherctl" "$app/Contents/MacOS/"
+cp Resources/Tether.icns "$app/Contents/Resources/"
 sed "s/__VERSION__/$version/g" Resources/Info.plist > "$app/Contents/Info.plist"
 if [[ -n "${SIGNING_IDENTITY:-}" ]]; then
     for target in "$app/Contents/MacOS/tetherctl" "$app/Contents/MacOS/Tether" "$app"; do

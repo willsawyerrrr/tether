@@ -34,7 +34,7 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _notifyIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath),
             Text = "Tether",
             ContextMenuStrip = new ContextMenuStrip(),
             Visible = true,
