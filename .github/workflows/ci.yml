@@ -30,12 +30,12 @@ jobs:
   windows:
     needs: changes
     if: github.event_name == 'push' || needs.changes.outputs.windows == 'true'
-    runs-on: windows-latest
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
       - name: Build
         run: dotnet build -c Release
         working-directory: windows/Tether
