@@ -1,9 +1,15 @@
 # Tether (macOS)
 
-A menu bar app for starting, watching, and stopping `claude remote-control`
-server sessions — one per directory — without keeping a terminal open. No
-Dock icon, no main window: the menu bar icon and its popover are the entire
-UI.
+A window and menu bar app for running `claude remote-control` server sessions —
+one per directory — without keeping a terminal open: Tether is the terminal.
+The main window lists your directories and shows the selected one's live
+terminal (keyboard input included), with toolbar controls to start, stop,
+restart, copy the join URL, remove, and add directories. The menu bar item
+offers the same list in a popover plus an "Open Tether" action.
+
+Closing the window leaves Tether running in the menu bar with every server
+alive; the Dock icon appears only while a window is open. Quitting Tether
+terminates the servers.
 
 Targets macOS 13+.
 
@@ -27,15 +33,20 @@ This is a Swift Package Manager package, not an `.xcodeproj`:
 - `Sources/TetherCLI/` — the `tether` command-line client (built as `tetherctl`,
   so it can sit beside the app executable in the bundle).
 - `Tests/TetherTests/` — XCTest suite for the output parser, `SessionStatus`,
-  and the control protocol coding.
+  `RestartPolicy`, directory record decoding, and the control protocol coding.
 - `Sources/Tether/` — app source.
-  - `TetherApp.swift` — `MenuBarExtra` scene and app delegate
-    (accessory activation policy).
-  - `Models/` — `SessionStatus`, `DirectoryRecord`, `ManagedDirectory`.
-  - `Services/` — `RemoteControlProcess` (spawns
-    `claude remote-control`), `OutputParser` (parses its output), `DirectoryStore` (persistence), `AppModel`
-    (app-wide state), `ControlServer` (the control socket `tether` talks to).
-  - `Views/` — `MenuBarContentView`, `DirectoryRowView`.
+  - `TetherApp.swift` — main window and `MenuBarExtra` scenes, and the app
+    delegate (activation policy, quit handling).
+  - `Models/` — `SessionStatus`, `RestartPolicy`, `DirectoryRecord`,
+    `ManagedDirectory` (supervises one server).
+  - `Services/` — `RemoteControlProcess` (runs `claude remote-control` on a
+    pseudo-terminal), `TerminalSession` (the directory's
+    [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) terminal),
+    `OutputParser` (parses its output), `DirectoryStore` (persistence),
+    `AppModel` (app-wide state), `ControlServer` (the control socket `tether`
+    talks to).
+  - `Views/` — `MainWindowView`, `TerminalContainerView`, `StatusIndicator`,
+    `MenuBarContentView`, `DirectoryRowView`.
 
 ## Opening and running
 
@@ -81,13 +92,16 @@ running.
 ## Notes
 
 - The directory list persists across launches at
-  `~/Library/Application Support/Tether/directories.json`.
-  Quitting the app leaves any running servers running, so they keep fronting
-  sessions someone might be connected to. Every launch starts a server for
-  each directory in that list, or, for one detected as still running from
-  before this app last quit, reuses the join URL it reported (persisted with
-  the directory) rather than starting a competing duplicate. If it hadn't
-  reported one yet, it's marked running and can only be stopped.
+  `~/Library/Application Support/Tether/directories.json`; every launch starts
+  a server for each directory in it.
+- Each server runs on a pseudo-terminal Tether owns, resized with the terminal
+  view. Output is kept per directory (10,000 lines of scrollback), so it
+  persists across directory switches and window closes.
+- A server that exits unexpectedly is restarted after 2s, doubling up to 60s;
+  a run of at least 60s resets the backoff. The status shows the exit reason,
+  a countdown to the next attempt, and the restart count, and the terminal
+  keeps the output. Stopping or restarting from Tether never triggers this.
+- Quitting sends `SIGTERM` to each server, waits up to 3s, then `SIGKILL`s.
 - A directory must already have its Claude Code workspace trust dialog
   accepted (`claude` run there once, interactively) before its server can
   start; otherwise the directory's status surfaces the trust error verbatim.

@@ -7,9 +7,8 @@ enum SessionStatus: Equatable {
     case ready(joinURL: String)
     case error(message: String)
 
-    /// Detected as still running from before this app last quit, but it hadn't yet reported a
-    /// join URL by then, so it can only be stopped, not connected to.
-    case runningUntracked
+    /// The server exited unexpectedly and is waiting to be started again.
+    case restarting(attempt: Int, retryAt: Date, reason: String)
 
     /// The join URL, once the server has reported one.
     var joinURL: String? {
@@ -20,10 +19,16 @@ enum SessionStatus: Equatable {
     /// Whether a child process is currently expected to be alive for this status.
     var isRunning: Bool {
         switch self {
-        case .connecting, .ready, .runningUntracked:
+        case .connecting, .ready:
             return true
-        case .stopped, .error:
+        case .stopped, .error, .restarting:
             return false
         }
+    }
+
+    /// Whether the server is running or scheduled to run again without user action.
+    var isActive: Bool {
+        if case .restarting = self { return true }
+        return isRunning
     }
 }
