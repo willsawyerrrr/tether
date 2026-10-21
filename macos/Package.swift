@@ -10,6 +10,9 @@ let package = Package(
         .executable(name: "Tether", targets: ["Tether"]),
         .executable(name: "tetherctl", targets: ["TetherCLI"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm.git", from: "1.99.1")
+    ],
     targets: [
         .target(
             name: "TetherIPC",
@@ -17,7 +20,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "Tether",
-            dependencies: ["TetherIPC"],
+            dependencies: [
+                "TetherIPC",
+                .product(name: "SwiftTerm", package: "SwiftTerm"),
+            ],
             path: "Sources/Tether"
         ),
         .executableTarget(

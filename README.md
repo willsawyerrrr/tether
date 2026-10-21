@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/willsawyerrrr/tether/actions/workflows/ci.yml/badge.svg)](https://github.com/willsawyerrrr/tether/actions/workflows/ci.yml)
 
-Tether is a pair of native macOS menu bar and Windows system tray apps for starting, watching, and
+Tether is a pair of native macOS (window and menu bar) and Windows system tray apps for starting, watching, and
 stopping [`claude remote-control`](https://claude.ai/code) server sessions —
 one per directory — without keeping a terminal open.
 
@@ -14,7 +14,8 @@ when you're done. Each running server shows its status inline.
 
 ## Layout
 
-- [`macos/`](macos/) — SwiftUI menu bar app.
+- [`macos/`](macos/) — SwiftUI window and menu bar app; runs each server in a
+  built-in terminal and keeps it alive.
 - [`windows/`](windows/) — native .NET system tray app.
 
 Each app is built and run from its own native toolchain (Xcode / Visual

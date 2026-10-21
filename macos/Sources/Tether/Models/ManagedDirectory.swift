@@ -1,8 +1,8 @@
 import Combine
-import Darwin
 import Foundation
 
-/// A directory the user has added, and the `claude remote-control` server managing it.
+/// A directory the user has added, and the `claude remote-control` server Tether runs for it
+/// and keeps alive.
 @MainActor
 final class ManagedDirectory: ObservableObject, Identifiable {
     let id: UUID
@@ -11,87 +11,182 @@ final class ManagedDirectory: ObservableObject, Identifiable {
     /// The current lifecycle state of this directory's server.
     @Published private(set) var status: SessionStatus = .stopped
 
-    /// The process id of this directory's server, once known — kept so a still-running server
-    /// can be recognised (and stopped) after this app restarts, even though this launch never
-    /// started it itself.
-    @Published private(set) var pid: pid_t?
+    /// How many times the server has been restarted after exiting unexpectedly.
+    @Published private(set) var restartCount = 0
+
+    /// The terminal showing this directory's server output; retained for the app's lifetime.
+    let terminal = TerminalSession()
+
+    var policy = RestartPolicy.default
 
     private var process: RemoteControlProcess?
+    private var launchedAt = Date()
+    private var consecutiveRestarts = 0
+    private var userRequestedStop = false
+    private var restartRequested = false
+    private var restartTask: Task<Void, Never>?
+    private var outputTail = ""
 
-    /// The join URL restored from a record, reused if that record's server is still running.
-    private let restoredJoinURL: String?
+    /// Output retained for parsing is capped to this many characters.
+    private static let maxParsedCharacters = 20_000
 
     var name: String { path.lastPathComponent }
 
     init(id: UUID = UUID(), path: URL) {
         self.id = id
         self.path = path
-        self.restoredJoinURL = nil
+        terminal.onInput = { [weak self] data in self?.process?.write(data) }
+        terminal.onResize = { [weak self] cols, rows in self?.process?.resize(cols: cols, rows: rows) }
     }
 
-    init(record: DirectoryRecord) {
-        self.id = record.id
-        self.path = URL(fileURLWithPath: record.path, isDirectory: true)
-        self.pid = record.pid
-        self.restoredJoinURL = record.joinURL
+    convenience init(record: DirectoryRecord) {
+        self.init(id: record.id, path: URL(fileURLWithPath: record.path, isDirectory: true))
     }
 
     /// The persistable form of this directory.
     var record: DirectoryRecord {
-        DirectoryRecord(id: id, path: path.path, pid: pid, joinURL: status.joinURL)
+        DirectoryRecord(id: id, path: path.path)
     }
 
-    /// Starts `claude remote-control` for this directory, unless it's already running — whether
-    /// as a process this instance launched, or one detected as still running from before this
-    /// app last quit (see `isOrphanStillRunning`). A still-running server keeps the join URL it
-    /// reported before the quit, so it comes back as `.ready`; if it hadn't reported one yet,
-    /// it's surfaced as `.runningUntracked`. Either way no competing duplicate is started.
+    /// Starts the server, unless it's already running or waiting to be restarted.
     func start() {
-        guard !status.isRunning else { return }
+        guard !status.isActive else { return }
+        consecutiveRestarts = 0
+        launch()
+    }
 
-        if let pid, Self.isOrphanStillRunning(pid: pid) {
-            status = restoredJoinURL.map { .ready(joinURL: $0) } ?? .runningUntracked
-            return
+    /// Stops the server and any pending restart. The process gets `SIGTERM`, then `SIGKILL`
+    /// if it lingers.
+    func stop() {
+        restartTask?.cancel()
+        restartTask = nil
+        restartRequested = false
+
+        if let process, !process.hasExited {
+            userRequestedStop = true
+            process.terminate()
+        } else if status != .stopped {
+            status = .stopped
         }
+    }
 
-        pid = nil
+    /// Stops the server if running, then starts it afresh.
+    func restart() {
+        restartTask?.cancel()
+        restartTask = nil
+        if let process, !process.hasExited {
+            restartRequested = true
+            userRequestedStop = true
+            process.terminate()
+        } else {
+            consecutiveRestarts = 0
+            launch()
+        }
+    }
+
+    /// Asks the server to terminate ahead of the app quitting. Returns once it has exited or
+    /// `timeout` has passed, then kills it.
+    func terminateForQuit(timeout: TimeInterval) async {
+        restartTask?.cancel()
+        restartTask = nil
+        restartRequested = false
+        guard let process, !process.hasExited else { return }
+        userRequestedStop = true
+        process.terminate(grace: timeout)
+        let deadline = Date().addingTimeInterval(timeout + 0.5)
+        while !process.hasExited, Date() < deadline {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+    }
+
+    private func launch() {
+        restartTask = nil
+        userRequestedStop = false
+        restartRequested = false
+        outputTail = ""
+        launchedAt = Date()
         status = .connecting
 
-        let process = RemoteControlProcess(directoryURL: path, name: name) { [weak self] newStatus in
-            self?.status = newStatus
-            if !newStatus.isRunning {
-                self?.pid = nil
+        do {
+            let process = try RemoteControlProcess(
+                directoryURL: path, name: name, cols: terminal.cols, rows: terminal.rows)
+            process.onOutput = { [weak self] data in self?.receive(data) }
+            process.onExit = { [weak self, weak process] status in
+                guard let self, let process, self.process === process else { return }
+                self.handleExit(status: status)
             }
+            self.process = process
+        } catch {
+            status = .error(message: "Failed to launch claude: \(error.localizedDescription)")
+            note("Failed to launch claude: \(error.localizedDescription)")
         }
-        self.process = process
-        process.start()
-        pid = process.pid
     }
 
-    /// Stops the running server, if any: `SIGTERM` to a process this instance launched, or
-    /// directly to a process detected as still running from before this app last quit.
-    func stop() {
-        if let process {
-            process.stop()
+    private func receive(_ data: Data) {
+        terminal.feed(data)
+        if let chunk = String(data: data, encoding: .utf8) {
+            outputTail += chunk
+            if outputTail.count > Self.maxParsedCharacters {
+                outputTail = String(outputTail.suffix(Self.maxParsedCharacters))
+            }
+        }
+
+        guard case .connecting = status else { return }
+        let stripped = OutputParser.stripANSI(outputTail)
+        if let joinURL = OutputParser.joinURL(in: stripped) {
+            status = .ready(joinURL: joinURL)
+        }
+    }
+
+    private func handleExit(status exitStatus: Int32) {
+        process = nil
+        let stripped = OutputParser.stripANSI(outputTail)
+        let untrusted =
+            stripped.contains(OutputParser.workspaceNotTrustedMarker)
+            ? OutputParser.workspaceNotTrustedLine(in: stripped) : nil
+        let description = Self.describe(exitStatus: exitStatus)
+
+        if restartRequested {
+            consecutiveRestarts = 0
+            launch()
             return
         }
 
-        if status.isRunning, let pid {
-            kill(pid, SIGTERM)
+        let decision = policy.decide(
+            userRequestedStop: userRequestedStop,
+            workspaceNotTrusted: untrusted,
+            runDuration: Date().timeIntervalSince(launchedAt),
+            consecutiveRestarts: consecutiveRestarts)
+
+        switch decision {
+        case .stopped:
             status = .stopped
-            self.pid = nil
+            note("Stopped.")
+        case .error(let message):
+            status = .error(message: message)
+            note(message)
+        case .restart(let attempt, let delay):
+            consecutiveRestarts = attempt
+            restartCount += 1
+            let retryAt = Date().addingTimeInterval(delay)
+            status = .restarting(attempt: attempt, retryAt: retryAt, reason: description)
+            note("claude \(description). Restarting in \(Int(delay.rounded(.up)))s (attempt \(attempt)).")
+            restartTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                guard !Task.isCancelled else { return }
+                self?.launch()
+            }
         }
     }
 
-    /// Whether `pid` still belongs to a live `claude` process. `claude remote-control` is
-    /// launched via `env`, which execs into `claude` in place rather than forking, so the pid
-    /// stays the same across the exec — checking the process name guards against a coincidental
-    /// pid reuse by some unrelated process since this app last quit.
-    private static func isOrphanStillRunning(pid: pid_t) -> Bool {
-        guard kill(pid, 0) == 0 else { return false }
+    /// Writes a Tether-originated line into the terminal.
+    private func note(_ message: String) {
+        terminal.feed(text: "\r\n\u{1B}[2m[Tether] \(message)\u{1B}[0m\r\n")
+    }
 
-        var buffer = [CChar](repeating: 0, count: 64)
-        guard proc_name(pid, &buffer, UInt32(buffer.count)) > 0 else { return false }
-        return String(cString: buffer) == "claude"
+    private static func describe(exitStatus: Int32) -> String {
+        let signal = exitStatus & 0x7f
+        if signal == 0 { return "exited with code \((exitStatus >> 8) & 0xff)" }
+        return "was killed by signal \(signal)"
     }
 }

@@ -7,6 +7,11 @@ struct TetherApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
+        Window("Tether", id: MainWindow.id) {
+            MainWindowView()
+                .environmentObject(appDelegate.model)
+        }
+
         MenuBarExtra("Tether", systemImage: "network") {
             MenuBarContentView()
                 .environmentObject(appDelegate.model)
@@ -15,10 +20,8 @@ struct TetherApp: App {
     }
 }
 
-/// Runs the app as a menu-bar-only accessory (no Dock icon, no main window). Quitting leaves
-/// any running servers running, so they keep fronting sessions someone might be connected to;
-/// the next launch detects them instead of starting a competing duplicate (see
-/// `ManagedDirectory.start()`).
+/// Keeps Tether alive in the menu bar when its window closes, shows a Dock icon only while a
+/// window is open, and terminates the servers it owns when the app quits.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
@@ -27,7 +30,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApplication.shared.setActivationPolicy(.accessory)
         controlServer.start()
+        let center = NotificationCenter.default
+        for name in [NSWindow.didBecomeMainNotification, NSWindow.willCloseNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.scheduleActivationPolicyUpdate() }
+            }
+        }
+        scheduleActivationPolicyUpdate()
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        Task {
+            await model.shutdown()
+            NSApplication.shared.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
+    private func scheduleActivationPolicyUpdate() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let hasWindow = NSApplication.shared.windows.contains {
+                $0.isVisible && $0.canBecomeMain && !($0 is NSPanel)
+            }
+            let policy: NSApplication.ActivationPolicy = hasWindow ? .regular : .accessory
+            if NSApplication.shared.activationPolicy() != policy {
+                NSApplication.shared.setActivationPolicy(policy)
+                if hasWindow { NSApplication.shared.activate(ignoringOtherApps: true) }
+            }
+        }
     }
 }

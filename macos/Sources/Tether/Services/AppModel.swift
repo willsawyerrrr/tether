@@ -9,14 +9,19 @@ import TetherIPC
 final class AppModel: ObservableObject {
     @Published private(set) var directories: [ManagedDirectory] = []
 
-    private var statusObservers: [UUID: AnyCancellable] = [:]
+    /// The directory shown in the main window.
+    @Published var selection: UUID?
 
     init() {
         directories = DirectoryStore.load().map(ManagedDirectory.init(record:))
         for directory in directories {
-            observe(directory)
             directory.start()
         }
+    }
+
+    /// The directories ordered by name.
+    var sortedDirectories: [ManagedDirectory] {
+        directories.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     /// Presents a directory picker and adds the chosen directory, if any and not already added.
@@ -41,9 +46,9 @@ final class AppModel: ObservableObject {
 
         let directory = ManagedDirectory(path: standardizedURL)
         directories.append(directory)
-        observe(directory)
         persist()
         directory.start()
+        selection = directory.id
         return directory
     }
 
@@ -91,14 +96,17 @@ final class AppModel: ObservableObject {
     func remove(_ directory: ManagedDirectory) {
         directory.stop()
         directories.removeAll { $0.id == directory.id }
-        statusObservers[directory.id] = nil
+        if selection == directory.id { selection = nil }
         persist()
     }
 
-    /// Persists whenever this directory's server status or pid changes.
-    private func observe(_ directory: ManagedDirectory) {
-        statusObservers[directory.id] = Publishers.CombineLatest(directory.$status, directory.$pid)
-            .sink { [weak self] _ in self?.persist() }
+    /// Terminates every server ahead of the app quitting.
+    func shutdown() async {
+        await withTaskGroup(of: Void.self) { group in
+            for directory in directories {
+                group.addTask { await directory.terminateForQuit(timeout: 3) }
+            }
+        }
     }
 
     private func persist() {

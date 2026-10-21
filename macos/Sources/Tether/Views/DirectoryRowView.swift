@@ -22,7 +22,7 @@ struct DirectoryRowView: View {
 
                 Spacer()
 
-                statusIcon
+                StatusIndicator(status: directory.status)
 
                 Button {
                     toggleRunning()
@@ -59,6 +59,13 @@ struct DirectoryRowView: View {
                 }
             }
 
+            if case .restarting(let attempt, let retryAt, let reason) = directory.status {
+                (Text("claude \(reason). Restart \(attempt) in ") + Text(retryAt, style: .timer))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .lineLimit(3)
+            }
+
             if case .error(let message) = directory.status {
                 Text(message)
                     .font(.caption)
@@ -75,32 +82,6 @@ struct DirectoryRowView: View {
             directory.stop()
         } else {
             directory.start()
-        }
-    }
-
-    @ViewBuilder
-    private var statusIcon: some View {
-        switch directory.status {
-        case .stopped:
-            Image(systemName: "circle")
-                .foregroundStyle(.secondary)
-                .help("Stopped")
-        case .connecting:
-            ProgressView()
-                .controlSize(.small)
-                .help("Connecting")
-        case .ready:
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-                .help("Ready")
-        case .error:
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
-                .help("Error")
-        case .runningUntracked:
-            Image(systemName: "questionmark.circle.fill")
-                .foregroundStyle(.orange)
-                .help("Running from a previous launch — its join URL isn't available")
         }
     }
 }

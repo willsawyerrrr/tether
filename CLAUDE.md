@@ -13,10 +13,10 @@ toolkit.
 - It is a real CLI subcommand, run with the target directory as its working
   directory (not a positional argument): spawn it with `cwd` set to the
   directory the user picked.
-- It runs fully headless: no TTY is required, stdin can be empty, and
-  stdout/stderr can be redirected or piped. It still writes an
-  ANSI-decorated live status panel to stdout (cursor-movement escape
-  sequences) — strip ANSI codes before parsing lines.
+- It can run headless (no TTY, piped output), but it writes an
+  ANSI-decorated live status panel (cursor-movement escape sequences) and
+  accepts keyboard input, so the macOS app runs it on a pseudo-terminal.
+  Strip ANSI codes before parsing lines.
 - A directory must already have its workspace trust dialog accepted (`claude`
   run there once, interactively) or the process exits immediately with
   `Error: Workspace not trusted. Please run \`claude\` in <dir> first...`
@@ -34,7 +34,16 @@ toolkit.
 
 ## Structure
 
-- `macos/` (SwiftPM): `Tether` menu bar app; `TetherIPC` library holding the
+- `macos/` (SwiftPM): `Tether` window and menu bar app. The main window
+  (`NavigationSplitView`) lists directories and shows the selected one's live
+  terminal, rendered by SwiftTerm. Each server runs on a pseudo-terminal Tether
+  owns for its whole life (`RemoteControlProcess`); output feeds a per-directory
+  `TerminalSession` that outlives the window. Closing the window leaves Tether
+  in the menu bar (Dock icon only while a window is open) with servers running;
+  quitting terminates them (`SIGTERM`, then `SIGKILL`). A server that exits
+  unexpectedly is restarted with capped exponential backoff (`RestartPolicy`);
+  an untrusted workspace is surfaced as an error without restarting.
+  The `TetherIPC` library holds the
   control protocol (newline-terminated JSON `ControlRequest`/`ControlResponse`
   for `add`/`remove`/`start`/`stop`) and the Unix socket helpers; `tetherctl`
   CLI client (symlinked as `tether`). The app listens on
@@ -53,7 +62,8 @@ toolkit.
 
 macOS: XCTest target `TetherTests` (`macos/Tests/TetherTests/`), run with
 `swift test` from `macos/`. Parsing of `claude remote-control` output lives in
-`OutputParser` so it can be tested without spawning a process.
+`OutputParser`, and restart/backoff decisions in `RestartPolicy`, so both can be
+tested without spawning a process.
 
 ## CI
 

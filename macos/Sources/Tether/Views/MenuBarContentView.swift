@@ -5,6 +5,7 @@ import SwiftUI
 /// an add button, and quit.
 struct MenuBarContentView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -21,7 +22,7 @@ struct MenuBarContentView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
-                            ForEach(sortedDirectories) { directory in
+                            ForEach(model.sortedDirectories) { directory in
                                 DirectoryRowView(directory: directory)
                                 Divider()
                             }
@@ -36,17 +37,22 @@ struct MenuBarContentView: View {
 
             Divider()
 
-            Button("Quit Tether") {
-                NSApplication.shared.terminate(nil)
+            HStack {
+                Button("Open Tether") {
+                    MainWindow.open(using: openWindow)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button("Quit Tether") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             .padding(12)
         }
         .frame(width: 340)
-    }
-
-    private var sortedDirectories: [ManagedDirectory] {
-        model.directories.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     private var header: some View {
