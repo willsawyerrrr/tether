@@ -43,7 +43,7 @@ final class AppModel: ObservableObject {
 
     /// Adds and starts the directory at `url`. Returns `nil` if it's already in the list.
     @discardableResult
-    private func add(_ url: URL, spawnMode: SpawnMode = .sameDir) -> ManagedDirectory? {
+    private func add(_ url: URL, spawnMode: SpawnMode? = nil) -> ManagedDirectory? {
         let standardizedURL = url.standardizedFileURL
         guard directory(at: standardizedURL) == nil else { return nil }
 
@@ -73,7 +73,7 @@ final class AppModel: ObservableObject {
             else {
                 return ControlResponse(ok: false, message: "\(url.path) is not a directory.")
             }
-            guard add(url, spawnMode: request.spawnMode ?? .sameDir) != nil else {
+            guard add(url, spawnMode: request.spawnMode) != nil else {
                 return ControlResponse(ok: true, message: "\(url.path) is already added.")
             }
             return ControlResponse(ok: true, message: "Added \(url.path).")

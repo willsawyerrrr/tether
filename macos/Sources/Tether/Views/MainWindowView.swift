@@ -95,8 +95,8 @@ private struct DirectoryDetailView: View {
         .toolbar {
             ToolbarItemGroup {
                 Picker("Spawn Mode", selection: $directory.spawnMode) {
-                    Text("Same Directory").tag(SpawnMode.sameDir)
-                    Text("Worktree").tag(SpawnMode.worktree)
+                    Text("Default (\(SpawnMode.current.title))").tag(SpawnMode?.none)
+                    ForEach(SpawnMode.allCases, id: \.self) { Text($0.title).tag(SpawnMode?.some($0)) }
                 }
                 .help("Where sessions run; applies on the next restart")
 

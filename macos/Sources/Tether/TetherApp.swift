@@ -19,6 +19,10 @@ struct TetherApp: App {
                 .environmentObject(appDelegate.model)
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView()
+        }
     }
 }
 

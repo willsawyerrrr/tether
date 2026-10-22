@@ -12,10 +12,15 @@ final class DirectoryRecordTests: XCTestCase {
         let records = try JSONDecoder().decode([DirectoryRecord].self, from: Data(json.utf8))
         XCTAssertEqual(records.count, 1)
         XCTAssertEqual(records[0].path, "/tmp/project")
-        XCTAssertEqual(records[0].spawnMode, .sameDir)
+        XCTAssertNil(records[0].spawnMode)
     }
 
     func testRoundTripOmitsLegacyFields() throws {
+        let unset = DirectoryRecord(id: UUID(), path: "/tmp/project")
+        let unsetObject = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(unset)) as? [String: Any])
+        XCTAssertEqual(Set(unsetObject.keys), ["id", "path"])
+
         let record = DirectoryRecord(id: UUID(), path: "/tmp/project", spawnMode: .worktree)
         let data = try JSONEncoder().encode(record)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
