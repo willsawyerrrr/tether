@@ -102,7 +102,8 @@ private struct DirectoryDetailView: View {
                     }
                     .pickerStyle(.inline)
                 } label: {
-                    Text((directory.spawnMode ?? .current).title)
+                    Label((directory.spawnMode ?? .current).title, systemImage: "arrow.triangle.branch")
+                        .labelStyle(.titleAndIcon)
                 }
                 .help("Where sessions run; applies on the next restart")
 
