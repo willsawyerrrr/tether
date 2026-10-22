@@ -58,6 +58,7 @@ private struct StandardWindowConfigurator: NSViewRepresentable {
         DispatchQueue.main.async { [weak view] in
             guard let window = view?.window else { return }
             window.styleMask.formUnion([.closable, .miniaturizable, .resizable])
+            window.collectionBehavior.subtract([.fullScreenNone, .fullScreenAuxiliary, .fullScreenDisallowsTiling])
             window.collectionBehavior.insert(.fullScreenPrimary)
         }
         return view
