@@ -94,9 +94,14 @@ private struct DirectoryDetailView: View {
         .navigationSubtitle(directory.path.path)
         .toolbar {
             ToolbarItemGroup {
-                Picker("Spawn Mode", selection: $directory.spawnMode) {
-                    Text("Default (\(SpawnMode.current.title))").tag(SpawnMode?.none)
-                    ForEach(SpawnMode.allCases, id: \.self) { Text($0.title).tag(SpawnMode?.some($0)) }
+                Menu {
+                    Picker("Spawn Mode", selection: $directory.spawnMode) {
+                        Text("Default (\(SpawnMode.current.title))").tag(SpawnMode?.none)
+                        ForEach(SpawnMode.allCases, id: \.self) { Text($0.title).tag(SpawnMode?.some($0)) }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Text((directory.spawnMode ?? .current).title)
                 }
                 .help("Where sessions run; applies on the next restart")
 
