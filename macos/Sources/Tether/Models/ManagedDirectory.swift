@@ -9,8 +9,9 @@ final class ManagedDirectory: ObservableObject, Identifiable {
     let id: UUID
     let path: URL
 
-    /// Where the server runs the sessions it spawns; takes effect the next time it launches.
-    @Published var spawnMode: SpawnMode {
+    /// Overrides the default spawn mode for this directory; `nil` follows the default. Takes
+    /// effect the next time the server launches.
+    @Published var spawnMode: SpawnMode? {
         didSet { if spawnMode != oldValue { onChange?() } }
     }
 
@@ -41,7 +42,7 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
     var name: String { path.lastPathComponent }
 
-    init(id: UUID = UUID(), path: URL, spawnMode: SpawnMode = .sameDir) {
+    init(id: UUID = UUID(), path: URL, spawnMode: SpawnMode? = nil) {
         self.id = id
         self.path = path
         self.spawnMode = spawnMode
@@ -121,7 +122,7 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
         do {
             let process = try RemoteControlProcess(
-                directoryURL: path, name: name, spawnMode: spawnMode, cols: terminal.cols, rows: terminal.rows)
+                directoryURL: path, name: name, spawnMode: spawnMode ?? .current, cols: terminal.cols, rows: terminal.rows)
             process.onOutput = { [weak self] data in self?.receive(data) }
             process.onExit = { [weak self, weak process] status in
                 guard let self, let process, self.process === process else { return }

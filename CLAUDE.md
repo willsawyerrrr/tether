@@ -57,7 +57,7 @@ toolkit.
   app icon by `build-app.sh`) and `windows/Tether/Tether.ico` (the exe's
   `ApplicationIcon` and the tray icon).
 - Persistence: each app saves its added directories (macOS: with each one's
-  spawn mode, chosen in the toolbar or via `tether add --spawn`) as `directories.json` —
+  spawn-mode override, if any; the default lives in `UserDefaults` and is set in Settings) as `directories.json` —
   macOS in `~/Library/Application Support/Tether/`, Windows in
   `%APPDATA%\Tether\`.
 

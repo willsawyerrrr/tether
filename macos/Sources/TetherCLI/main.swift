@@ -6,7 +6,8 @@ let usage = """
     Usage: tether <add|remove|start|stop> [--spawn same-dir|worktree] [directory]
 
     Controls the running Tether app. `directory` defaults to the current directory.
-    `--spawn` (add only) sets where the directory's sessions run; default `same-dir`.
+    `--spawn` (add only) sets where the directory's sessions run; default follows
+    the Tether setting.
     """
 
 func fail(_ message: String) -> Never {
