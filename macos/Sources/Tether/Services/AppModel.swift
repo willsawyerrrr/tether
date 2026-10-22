@@ -25,18 +25,20 @@ final class AppModel: ObservableObject {
         directories.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    /// Presents a directory picker and adds the chosen directory, if any and not already added.
+    /// Presents a directory picker and adds the chosen directories that aren't already added.
     func addDirectory() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.prompt = "Add"
-        panel.message = "Choose a directory to manage with Tether."
+        panel.message = "Choose directories to manage with Tether."
 
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard panel.runModal() == .OK, !panel.urls.isEmpty else { return }
 
-        add(url)
+        for url in panel.urls {
+            add(url)
+        }
     }
 
     /// Adds and starts the directory at `url`. Returns `nil` if it's already in the list.
