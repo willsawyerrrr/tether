@@ -7,6 +7,10 @@ terminal (keyboard input included), with toolbar controls to start, stop,
 restart, copy the join URL, remove, and add directories. The menu bar item
 offers the same list in a popover plus an "Open Tether" action.
 
+Each directory runs its sessions in the directory itself (`same-dir`, the
+default) or in isolated git worktrees (`worktree`). Choose in the toolbar
+(applies on the next restart) or when adding: `tether add --spawn worktree [directory]`.
+
 Closing the window leaves Tether running in the menu bar with every server
 alive; the Dock icon appears only while a window is open. Quitting Tether
 terminates the servers.

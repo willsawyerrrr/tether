@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import TetherIPC
 
 /// Identifies and opens the main window.
 enum MainWindow {
@@ -76,6 +77,12 @@ private struct DirectoryDetailView: View {
         .navigationSubtitle(directory.path.path)
         .toolbar {
             ToolbarItemGroup {
+                Picker("Spawn Mode", selection: $directory.spawnMode) {
+                    Text("Same Directory").tag(SpawnMode.sameDir)
+                    Text("Worktree").tag(SpawnMode.worktree)
+                }
+                .help("Where sessions run; applies on the next restart")
+
                 Button {
                     directory.start()
                 } label: {

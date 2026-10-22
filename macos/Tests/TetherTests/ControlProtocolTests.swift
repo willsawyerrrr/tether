@@ -19,6 +19,13 @@ final class ControlProtocolTests: XCTestCase {
         XCTAssertEqual(decoded.path, "/a")
     }
 
+    func testRequestCarriesSpawnMode() throws {
+        let data = try JSONEncoder().encode(ControlRequest(command: .add, path: "/a", spawnMode: .worktree))
+        XCTAssertEqual(try JSONDecoder().decode(ControlRequest.self, from: data).spawnMode, .worktree)
+        let json = Data(#"{"command":"add","path":"/a"}"#.utf8)
+        XCTAssertNil(try JSONDecoder().decode(ControlRequest.self, from: json).spawnMode)
+    }
+
     func testRequestRejectsUnknownCommand() {
         let json = Data(#"{"command":"nope","path":"/a"}"#.utf8)
         XCTAssertThrowsError(try JSONDecoder().decode(ControlRequest.self, from: json))
