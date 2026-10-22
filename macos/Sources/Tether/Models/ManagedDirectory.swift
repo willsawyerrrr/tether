@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import TetherIPC
 
 /// A directory the user has added, and the `claude remote-control` server Tether runs for it
 /// and keeps alive.
@@ -7,6 +8,14 @@ import Foundation
 final class ManagedDirectory: ObservableObject, Identifiable {
     let id: UUID
     let path: URL
+
+    /// Where the server runs the sessions it spawns; takes effect the next time it launches.
+    @Published var spawnMode: SpawnMode {
+        didSet { if spawnMode != oldValue { onChange?() } }
+    }
+
+    /// Called when a persisted property changes.
+    var onChange: (() -> Void)?
 
     /// The current lifecycle state of this directory's server.
     @Published private(set) var status: SessionStatus = .stopped
@@ -32,20 +41,23 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
     var name: String { path.lastPathComponent }
 
-    init(id: UUID = UUID(), path: URL) {
+    init(id: UUID = UUID(), path: URL, spawnMode: SpawnMode = .sameDir) {
         self.id = id
         self.path = path
+        self.spawnMode = spawnMode
         terminal.onInput = { [weak self] data in self?.process?.write(data) }
         terminal.onResize = { [weak self] cols, rows in self?.process?.resize(cols: cols, rows: rows) }
     }
 
     convenience init(record: DirectoryRecord) {
-        self.init(id: record.id, path: URL(fileURLWithPath: record.path, isDirectory: true))
+        self.init(
+            id: record.id, path: URL(fileURLWithPath: record.path, isDirectory: true),
+            spawnMode: record.spawnMode)
     }
 
     /// The persistable form of this directory.
     var record: DirectoryRecord {
-        DirectoryRecord(id: id, path: path.path)
+        DirectoryRecord(id: id, path: path.path, spawnMode: spawnMode)
     }
 
     /// Starts the server, unless it's already running or waiting to be restarted.
@@ -109,7 +121,7 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
         do {
             let process = try RemoteControlProcess(
-                directoryURL: path, name: name, cols: terminal.cols, rows: terminal.rows)
+                directoryURL: path, name: name, spawnMode: spawnMode, cols: terminal.cols, rows: terminal.rows)
             process.onOutput = { [weak self] data in self?.receive(data) }
             process.onExit = { [weak self, weak process] status in
                 guard let self, let process, self.process === process else { return }

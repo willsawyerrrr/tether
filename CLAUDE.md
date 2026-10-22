@@ -28,6 +28,8 @@ toolkit.
 - Shuts down cleanly on a normal terminate signal (`SIGTERM` on macOS; on
   Windows, `Process.Kill()` is the only reliable option since it has no
   console to send a Ctrl+C event to when run detached).
+- `--spawn <same-dir|worktree>` picks where sessions run: in the directory
+  itself, or (worktree) each on-demand session in an isolated git worktree.
 - One child process per directory; there's no single daemon the apps need to
   share or multiplex themselves — `claude remote-control` handles that
   internally.
@@ -45,7 +47,7 @@ toolkit.
   an untrusted workspace is surfaced as an error without restarting.
   The `TetherIPC` library holds the
   control protocol (newline-terminated JSON `ControlRequest`/`ControlResponse`
-  for `add`/`remove`/`start`/`stop`) and the Unix socket helpers; `tetherctl`
+  for `add`/`remove`/`start`/`stop`; `add` takes an optional `SpawnMode`) and the Unix socket helpers; `tetherctl`
   CLI client (symlinked as `tether`). The app listens on
   `~/Library/Application Support/Tether/tether.sock`; `tetherctl` connects to it.
 - `windows/Tether/` (.NET 10): tray app; no CLI or control socket.
@@ -54,7 +56,8 @@ toolkit.
   `assets/icon.png` and derives `macos/Resources/Tether.icns` (bundled as the
   app icon by `build-app.sh`) and `windows/Tether/Tether.ico` (the exe's
   `ApplicationIcon` and the tray icon).
-- Persistence: each app saves its added directories as `directories.json` —
+- Persistence: each app saves its added directories (macOS: with each one's
+  spawn mode, chosen in the toolbar or via `tether add --spawn`) as `directories.json` —
   macOS in `~/Library/Application Support/Tether/`, Windows in
   `%APPDATA%\Tether\`.
 

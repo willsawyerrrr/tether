@@ -10,10 +10,13 @@ public struct ControlRequest: Codable {
     public let command: ControlCommand
     /// The absolute path of the directory the command applies to.
     public let path: String
+    /// The spawn mode for an `add`; `nil` means the default.
+    public let spawnMode: SpawnMode?
 
-    public init(command: ControlCommand, path: String) {
+    public init(command: ControlCommand, path: String, spawnMode: SpawnMode? = nil) {
         self.command = command
         self.path = path
+        self.spawnMode = spawnMode
     }
 }
 

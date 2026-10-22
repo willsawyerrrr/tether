@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
     init() {
         directories = DirectoryStore.load().map(ManagedDirectory.init(record:))
         for directory in directories {
+            directory.onChange = { [weak self] in self?.persist() }
             directory.start()
         }
     }
@@ -40,11 +41,12 @@ final class AppModel: ObservableObject {
 
     /// Adds and starts the directory at `url`. Returns `nil` if it's already in the list.
     @discardableResult
-    private func add(_ url: URL) -> ManagedDirectory? {
+    private func add(_ url: URL, spawnMode: SpawnMode = .sameDir) -> ManagedDirectory? {
         let standardizedURL = url.standardizedFileURL
         guard directory(at: standardizedURL) == nil else { return nil }
 
-        let directory = ManagedDirectory(path: standardizedURL)
+        let directory = ManagedDirectory(path: standardizedURL, spawnMode: spawnMode)
+        directory.onChange = { [weak self] in self?.persist() }
         directories.append(directory)
         persist()
         directory.start()
@@ -69,7 +71,7 @@ final class AppModel: ObservableObject {
             else {
                 return ControlResponse(ok: false, message: "\(url.path) is not a directory.")
             }
-            guard add(url) != nil else {
+            guard add(url, spawnMode: request.spawnMode ?? .sameDir) != nil else {
                 return ControlResponse(ok: true, message: "\(url.path) is already added.")
             }
             return ControlResponse(ok: true, message: "Added \(url.path).")
