@@ -45,7 +45,24 @@ struct MainWindowView: View {
             }
         }
         .frame(minWidth: 720, minHeight: 420)
+        .background(StandardWindowConfigurator())
     }
+}
+
+/// Gives the hosting window the full set of standard controls (close, minimise, zoom and
+/// full-screen), which tiling window managers use to tell a regular window from a dialog.
+private struct StandardWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async { [weak view] in
+            guard let window = view?.window else { return }
+            window.styleMask.formUnion([.closable, .miniaturizable, .resizable])
+            window.collectionBehavior.insert(.fullScreenPrimary)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
 private struct SidebarRow: View {

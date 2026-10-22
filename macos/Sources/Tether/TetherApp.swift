@@ -11,6 +11,8 @@ struct TetherApp: App {
             MainWindowView()
                 .environmentObject(appDelegate.model)
         }
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 1200, height: 800)
 
         MenuBarExtra("Tether", systemImage: "network") {
             MenuBarContentView()
