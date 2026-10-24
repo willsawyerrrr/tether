@@ -45,7 +45,7 @@ struct MainWindowView: View {
                 .help("Add a directory")
             }
         }
-        .frame(minWidth: 720, minHeight: 420)
+        .frame(minWidth: 320, minHeight: 200)
         .background(StandardWindowConfigurator())
     }
 }
