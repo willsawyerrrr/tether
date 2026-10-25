@@ -97,12 +97,17 @@ a `feat` commit bumps the minor version, anything else the patch version. The
 release builds `Tether.app` with `macos/scripts/package-app.sh`, which signs it
 with the Developer ID identity (hardened runtime), notarises and staples it, and
 zips it to `Tether.zip`; that asset is uploaded to the release. Signing and
-notarisation use the repository secrets `DEVELOPER_ID_P12`,
-`DEVELOPER_ID_P12_PASSWORD`, `NOTARY_KEY` (App Store Connect `.p8`),
-`NOTARY_KEY_ID`, and `NOTARY_ISSUER_ID`, which the shared workflow exposes to the
-build as `SIGNING_IDENTITY` and `NOTARY_KEY_PATH`/`NOTARY_KEY_ID`/`NOTARY_ISSUER_ID`;
-without them the build is ad-hoc signed and not notarised. The shared
-workflow then commits the new version and sha256 to `Casks/tether.rb` in
-`willsawyerrrr/homebrew-tap`, so `brew upgrade --cask tether` picks it up
+notarisation use the variables `DEVELOPER_ID_P12`, `DEVELOPER_ID_P12_PASSWORD`,
+`NOTARY_KEY` (App Store Connect `.p8`), `NOTARY_KEY_ID`, and `NOTARY_ISSUER_ID`
+from the Apple Development 1Password Environment, which the shared workflow
+exposes to the build as `SIGNING_IDENTITY` and
+`NOTARY_KEY_PATH`/`NOTARY_KEY_ID`/`NOTARY_ISSUER_ID`. The workflow loads the
+Environments with the repository secret `OP_SERVICE_ACCOUNT_TOKEN` (a service
+account scoped to them) and the repository variable `OP_ENVIRONMENT_IDS`
+(`b5zkkwxuutlttwbrv5xhgojye4 3i642eynjpsx2uctyqlexobgge pr4n6btanxalwrgrhgp2xu2h5i`:
+Apple Development, Shared for `TAP_DEPLOY_KEY`, then Tether); see platform's
+`docs/1password-environments.md`. Without the certificate variables the build is
+ad-hoc signed and not notarised. The shared workflow then commits the new
+version and sha256 to `Casks/tether.rb` in `willsawyerrrr/homebrew-tap`, so `brew upgrade --cask tether` picks it up
 immediately. Releases created by hand (`gh release create`) trigger the same
 update.
