@@ -64,7 +64,7 @@ final class RemoteControlProcess {
         let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
         let arguments = [
             shell, "-l", "-i", "-c", "exec claude \"$@\"", "claude",
-            "remote-control", "--name", name, "--spawn", spawnMode.rawValue, "--no-create-session-in-dir",
+            "remote-control", "--name", name, "--spawn", spawnMode.rawValue,
         ]
         var environment = ProcessInfo.processInfo.environment
         environment["TERM"] = "xterm-256color"
