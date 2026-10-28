@@ -98,7 +98,6 @@ public sealed class RemoteControlSession : IDisposable
             startInfo.ArgumentList.Add("remote-control");
             startInfo.ArgumentList.Add("--name");
             startInfo.ArgumentList.Add(_name);
-            startInfo.ArgumentList.Add("--no-create-session-in-dir");
             return startInfo;
         }
 
@@ -118,7 +117,6 @@ public sealed class RemoteControlSession : IDisposable
         startInfo.ArgumentList.Add("remote-control");
         startInfo.ArgumentList.Add("--name");
         startInfo.ArgumentList.Add(_name);
-        startInfo.ArgumentList.Add("--no-create-session-in-dir");
         return startInfo;
     }
 
