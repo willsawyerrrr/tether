@@ -33,6 +33,7 @@ See [`macos/README.md`](macos/README.md#installing) for details.
 
 ## Requirements
 
+- macOS 27 or later, for the macOS app.
 - A directory must already have its Claude Code workspace trust dialog
   accepted (run `claude` in it once, interactively) before a server can be
   started there.

@@ -60,7 +60,7 @@ struct DirectoryRowView: View {
             }
 
             if case .restarting(let attempt, let retryAt, let reason) = directory.status {
-                (Text("claude \(reason). Restart \(attempt) in ") + Text(retryAt, style: .timer))
+                Text("claude \(reason). Restart \(attempt) in \(Text(retryAt, style: .timer))")
                     .font(.caption)
                     .foregroundStyle(.orange)
                     .lineLimit(3)

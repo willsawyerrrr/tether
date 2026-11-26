@@ -82,6 +82,8 @@ workflow in `willsawyerrrr/platform` (see Releases).
 
 The macOS app builds with Xcode 27.2 in CI, local development and release: `ci.yml` pins `xcode-27` and `maxim-lobanov/setup-xcode` to `27.2`, and `.xcode-version` records it. Bump all of them together.
 
+The macOS app requires macOS 27: `platforms` in `macos/Package.swift`, `LSMinimumSystemVersion` in `macos/Resources/Info.plist` and `depends_on macos:` in the tap's `Casks/tether.rb` (which releases leave untouched) change together.
+
 The Windows app runs on .NET 10 in CI and local development (it has no production release, so the newest LTS sets the version): `TargetFramework` in both csprojs, `windows/global.json`, `actions/setup-dotnet` in `ci.yml` and the pinned `windows-2025` runner all use it. Bump them together.
 
 ## Conventions

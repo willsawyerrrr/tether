@@ -178,7 +178,7 @@ private struct DirectoryDetailView: View {
         case .error(let message):
             Text(message).foregroundStyle(.red).lineLimit(2).textSelection(.enabled)
         case .restarting(let attempt, let retryAt, let reason):
-            (Text("claude \(reason). Restart \(attempt) in ") + Text(retryAt, style: .timer))
+            Text("claude \(reason). Restart \(attempt) in \(Text(retryAt, style: .timer))")
                 .foregroundStyle(.orange)
         }
     }

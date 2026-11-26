@@ -4,7 +4,7 @@ import TetherIPC
 
 /// One `claude remote-control` child process attached to a pseudo-terminal, so it renders its
 /// interactive status panel and accepts keyboard input exactly as it would in a terminal.
-/// All callbacks run on the main queue.
+@MainActor
 final class RemoteControlProcess {
     private let master: Int32
     private let pid: pid_t
@@ -54,7 +54,7 @@ final class RemoteControlProcess {
         posix_spawn_file_actions_addopen(&actions, 0, slaveName, O_RDWR, 0)
         posix_spawn_file_actions_adddup2(&actions, 0, 1)
         posix_spawn_file_actions_adddup2(&actions, 0, 2)
-        posix_spawn_file_actions_addchdir_np(&actions, directoryURL.path)
+        posix_spawn_file_actions_addchdir(&actions, directoryURL.path)
 
         var attributes: posix_spawnattr_t?
         posix_spawnattr_init(&attributes)
