@@ -71,11 +71,15 @@ macOS: XCTest target `TetherTests` (`macos/Tests/TetherTests/`), run with
 tested without spawning a process. Process supervision tests replace the login
 shell (`ManagedDirectory.shell`) with a stand-in script.
 
+Windows: xUnit project `windows/Tether.Tests/`, run with `dotnet test` on
+Windows. Process supervision tests run a stand-in `claude.cmd` from the
+session's directory.
+
 ## CI
 
 `.github/workflows/ci.yml` runs on pushes and PRs to `main`. A path filter gates
 the `macos` (`swift build` and `swift test`) and `windows`
-(`dotnet build -c Release`) jobs on changes under `macos/**` and `windows/**` (always run on push). The `CI Status`
+(`dotnet build -c Release` and `dotnet test -c Release`) jobs on changes under `macos/**` and `windows/**` (always run on push). The `CI Status`
 job aggregates them and is the single required check, so a PR touching one app
 isn't blocked on the other's skipped job. Runs are grouped by workflow and ref;
 a newer push cancels an in-progress PR run but never a `main` run. `release.yml` reuses the shared

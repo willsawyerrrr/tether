@@ -14,6 +14,8 @@ public sealed class RemoteControlSession : IDisposable
 
     private const string WorkspaceNotTrustedMarker = "Workspace not trusted";
 
+    private static readonly TimeSpan OutputDrainTimeout = TimeSpan.FromSeconds(5);
+
     private readonly string _directoryPath;
     private readonly string _name;
     private Process? _process;
@@ -54,6 +56,7 @@ public sealed class RemoteControlSession : IDisposable
         process.ErrorDataReceived += OnErrorDataReceived;
         process.Exited += (_, _) =>
         {
+            WaitForOutput(process);
             if (!_becameReady && !_userRequestedStop && !_failed)
             {
                 var message = _lastStderrLine
@@ -69,6 +72,23 @@ public sealed class RemoteControlSession : IDisposable
         process.StandardInput.Close();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
+    }
+
+    /// <summary>
+    /// Waits for an exited process's output to be handled, as <see cref="Process.Exited"/> can be
+    /// raised first. The wait is bounded because a process left behind can hold the streams open.
+    /// </summary>
+    private static void WaitForOutput(Process process)
+    {
+        using var timeout = new CancellationTokenSource(OutputDrainTimeout);
+        try
+        {
+            process.WaitForExitAsync(timeout.Token).GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException)
+        {
+            // Report the exit with the output handled so far.
+        }
     }
 
     /// <summary>

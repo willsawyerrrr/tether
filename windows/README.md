@@ -32,7 +32,7 @@ dotnet test
 ```
 
 The xUnit project covers the pure helpers (`AnsiStripper`, `WslPath`) and
-runs in CI.
+`RemoteControlSession` (with a stand-in `claude.cmd`), and runs in CI.
 
 ## Usage
 
