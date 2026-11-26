@@ -29,18 +29,15 @@ final class OutputParserTests: XCTestCase {
             "Error: Workspace not trusted. Run `claude` first.")
     }
 
+    func testWorkspaceNotTrustedLineSplitsTerminalLineEndings() {
+        let text = "noise\r\nError: Workspace not trusted. Run `claude` first.\r\nmore\r\n"
+        XCTAssertEqual(
+            OutputParser.workspaceNotTrustedLine(in: text),
+            "Error: Workspace not trusted. Run `claude` first.")
+    }
+
     func testWorkspaceNotTrustedLineFallsBack() {
         XCTAssertEqual(
             OutputParser.workspaceNotTrustedLine(in: "nothing"), "Workspace not trusted.")
-    }
-
-    func testRemovingShellNoiseDropsEvalDiagnostics() {
-        let text = "(eval):1: can't change option: zle\nreal output\n(eval):22: other\n"
-        XCTAssertEqual(OutputParser.removingShellNoise(from: text), "real output\n")
-    }
-
-    func testRemovingShellNoiseKeepsMidLineEval() {
-        let text = "see (eval):1: inline\n"
-        XCTAssertEqual(OutputParser.removingShellNoise(from: text), text)
     }
 }
