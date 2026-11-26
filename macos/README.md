@@ -16,7 +16,7 @@ Closing the window leaves Tether running in the menu bar with every server
 alive; the Dock icon appears only while a window is open. Quitting Tether
 terminates the servers.
 
-Targets macOS 13+.
+Requires macOS 27 or later.
 
 ## Installing
 

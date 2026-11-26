@@ -1,12 +1,12 @@
 import Foundation
 
 /// An action `tetherctl` asks the running Tether app to perform on a directory.
-public enum ControlCommand: String, Codable, CaseIterable {
+public enum ControlCommand: String, Codable, CaseIterable, Sendable {
     case add, remove, start, stop
 }
 
 /// A single newline-terminated JSON request sent over the control socket.
-public struct ControlRequest: Codable {
+public struct ControlRequest: Codable, Sendable {
     public let command: ControlCommand
     /// The absolute path of the directory the command applies to.
     public let path: String
@@ -21,7 +21,7 @@ public struct ControlRequest: Codable {
 }
 
 /// The newline-terminated JSON reply to a `ControlRequest`.
-public struct ControlResponse: Codable {
+public struct ControlResponse: Codable, Sendable {
     public let ok: Bool
     /// A human-readable result, or the reason the command failed.
     public let message: String
