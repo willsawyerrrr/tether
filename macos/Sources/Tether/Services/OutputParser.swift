@@ -7,13 +7,14 @@ enum OutputParser {
     private static let ansiEscapePattern = try! NSRegularExpression(
         pattern: "\u{1B}\\[[0-?]*[ -/]*[@-~]"
     )
+    // A URL counts once something follows it, as output may stop partway through one.
     private static let joinURLPattern = try! NSRegularExpression(
-        pattern: "https://claude\\.ai/code\\?environment=[A-Za-z0-9_-]+"
+        pattern: "https://claude\\.ai/code\\?environment=[A-Za-z0-9_-]+(?=[^A-Za-z0-9_-])"
     )
 
     static let workspaceNotTrustedMarker = "Workspace not trusted"
 
-    /// The first join URL in `strippedText`, if any.
+    /// The first complete join URL in `strippedText`, if any.
     static func joinURL(in strippedText: String) -> String? {
         firstMatch(of: joinURLPattern, in: strippedText)
     }
