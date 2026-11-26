@@ -38,7 +38,8 @@ This is a Swift Package Manager package, not an `.xcodeproj`:
 - `Sources/TetherCLI/` — the `tether` command-line client (built as `tetherctl`,
   so it can sit beside the app executable in the bundle).
 - `Tests/TetherTests/` — XCTest suite for the output parser, `SessionStatus`,
-  `RestartPolicy`, directory record decoding, and the control protocol coding.
+  `RestartPolicy`, directory record decoding, the control protocol coding, and
+  process supervision (with a stand-in login shell).
 - `Sources/Tether/` — app source.
   - `TetherApp.swift` — main window and `MenuBarExtra` scenes, and the app
     delegate (activation policy, quit handling).

@@ -29,6 +29,9 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
     var policy = RestartPolicy.default
 
+    /// The login shell the server launches through.
+    var shell = RemoteControlProcess.loginShell
+
     private var process: RemoteControlProcess?
     private var launchedAt = Date()
     private var consecutiveRestarts = 0
@@ -122,7 +125,8 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
         do {
             let process = try RemoteControlProcess(
-                directoryURL: path, name: name, spawnMode: spawnMode ?? .current, cols: terminal.cols, rows: terminal.rows)
+                shell: shell, directoryURL: path, name: name, spawnMode: spawnMode ?? .current,
+                cols: terminal.cols, rows: terminal.rows)
             process.onOutput = { [weak self] data in self?.receive(data) }
             process.onExit = { [weak self, weak process] status in
                 guard let self, let process, self.process === process else { return }
