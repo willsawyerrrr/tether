@@ -38,10 +38,17 @@ final class ManagedDirectory: ObservableObject, Identifiable {
     private var userRequestedStop = false
     private var restartRequested = false
     private var restartTask: Task<Void, Never>?
-    private var outputTail = ""
 
-    /// Output retained for parsing is capped to this many characters.
-    private static let maxParsedCharacters = 20_000
+    /// The latest output, kept as bytes because a read can end inside a character.
+    private var outputTail = Data()
+
+    /// Output retained for parsing is capped to this many bytes.
+    private static let maxParsedBytes = 20_000
+
+    /// The retained output as text, without ANSI escape sequences.
+    private var strippedOutput: String {
+        OutputParser.stripANSI(String(decoding: outputTail, as: UTF8.self))
+    }
 
     var name: String { path.lastPathComponent }
 
@@ -119,7 +126,7 @@ final class ManagedDirectory: ObservableObject, Identifiable {
         restartTask = nil
         userRequestedStop = false
         restartRequested = false
-        outputTail = ""
+        outputTail = Data()
         launchedAt = Date()
         status = .connecting
 
@@ -141,23 +148,18 @@ final class ManagedDirectory: ObservableObject, Identifiable {
 
     private func receive(_ data: Data) {
         terminal.feed(data)
-        if let chunk = String(data: data, encoding: .utf8) {
-            outputTail += chunk
-            if outputTail.count > Self.maxParsedCharacters {
-                outputTail = String(outputTail.suffix(Self.maxParsedCharacters))
-            }
-        }
+        outputTail.append(data)
+        outputTail = Data(outputTail.suffix(Self.maxParsedBytes))
 
         guard case .connecting = status else { return }
-        let stripped = OutputParser.stripANSI(outputTail)
-        if let joinURL = OutputParser.joinURL(in: stripped) {
+        if let joinURL = OutputParser.joinURL(in: strippedOutput) {
             status = .ready(joinURL: joinURL)
         }
     }
 
     private func handleExit(status exitStatus: Int32) {
         process = nil
-        let stripped = OutputParser.stripANSI(outputTail)
+        let stripped = strippedOutput
         let untrusted =
             stripped.contains(OutputParser.workspaceNotTrustedMarker)
             ? OutputParser.workspaceNotTrustedLine(in: stripped) : nil

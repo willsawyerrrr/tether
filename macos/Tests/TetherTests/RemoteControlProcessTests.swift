@@ -42,6 +42,30 @@ final class RemoteControlProcessTests: XCTestCase {
         XCTAssertTrue(runMainLoop { kill(child, 0) != 0 })
     }
 
+    func testJoinURLIsReadWhenAReadEndsInsideACharacter() throws {
+        try assertJoinURL(
+            "https://claude.ai/code?environment=env_whole",
+            from: "printf 'https://claude.ai/code?environment=env_whole \\342'; sleep 0.5; printf '\\224\\200\\n'")
+    }
+
+    func testJoinURLIsReadWholeWhenAReadEndsInsideIt() throws {
+        try assertJoinURL(
+            "https://claude.ai/code?environment=env_whole",
+            from: "printf 'https://claude.ai/code?environment=env_'; sleep 0.5; printf 'whole\\n'")
+    }
+
+    /// Asserts the join URL a server running `script` becomes ready with.
+    private func assertJoinURL(_ joinURL: String, from script: String) throws {
+        let folder = try makeFolder()
+        let directory = ManagedDirectory(path: folder)
+        directory.shell = try makeStandIn(in: folder, script: "\(script); exec sleep 30")
+        directory.start()
+        defer { directory.stop() }
+
+        XCTAssertTrue(runMainLoop { directory.status.joinURL != nil })
+        XCTAssertEqual(directory.status.joinURL, joinURL)
+    }
+
     private func makeFolder() throws -> URL {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

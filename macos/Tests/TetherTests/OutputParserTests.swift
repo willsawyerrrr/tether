@@ -22,6 +22,10 @@ final class OutputParserTests: XCTestCase {
         XCTAssertNil(OutputParser.joinURL(in: "https://claude.ai/code and nothing else"))
     }
 
+    func testJoinURLIsNilWhileItMayContinue() {
+        XCTAssertNil(OutputParser.joinURL(in: "https://claude.ai/code?environment=env_01"))
+    }
+
     func testWorkspaceNotTrustedLineReturnsMatchingLine() {
         let text = "noise\nError: Workspace not trusted. Run `claude` first.\nmore"
         XCTAssertEqual(
