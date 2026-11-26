@@ -10,11 +10,6 @@ enum OutputParser {
     private static let joinURLPattern = try! NSRegularExpression(
         pattern: "https://claude\\.ai/code\\?environment=[A-Za-z0-9_-]+"
     )
-    // Matches diagnostics the login shell prints while sourcing the user's rc files, e.g.
-    // `(eval):1: can't change option: zle`.
-    private static let shellNoisePattern = try! NSRegularExpression(
-        pattern: "^\\(eval\\):\\d+: .*$\\n?", options: .anchorsMatchLines
-    )
 
     static let workspaceNotTrustedMarker = "Workspace not trusted"
 
@@ -26,15 +21,10 @@ enum OutputParser {
     /// The line of `strippedText` containing the workspace-trust error, or a generic message.
     static func workspaceNotTrustedLine(in strippedText: String) -> String {
         strippedText
-            .split(separator: "\n")
+            .split(whereSeparator: \.isNewline)
             .first(where: { $0.contains(workspaceNotTrustedMarker) })
             .map(String.init)
             ?? "Workspace not trusted."
-    }
-
-    static func removingShellNoise(from text: String) -> String {
-        let range = NSRange(text.startIndex..., in: text)
-        return shellNoisePattern.stringByReplacingMatches(in: text, range: range, withTemplate: "")
     }
 
     static func stripANSI(_ text: String) -> String {
