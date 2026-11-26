@@ -7,6 +7,7 @@ import TetherIPC
 @MainActor
 final class RemoteControlProcess {
     private let master: Int32
+    private let slave: Int32
     private let pid: pid_t
     private let readSource: DispatchSourceRead
     private let exitSource: DispatchSourceProcess
@@ -31,10 +32,13 @@ final class RemoteControlProcess {
         }
     }
 
-    /// Launches `claude remote-control` with `directoryURL` as its working directory, through the
-    /// user's login shell so `claude` resolves on the `PATH` their shell configures — GUI apps
+    /// The user's login shell.
+    static var loginShell: String { ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh" }
+
+    /// Launches `claude remote-control` with `directoryURL` as its working directory, through
+    /// `shell` as a login shell so `claude` resolves on the `PATH` it configures — GUI apps
     /// inherit only a minimal one.
-    init(directoryURL: URL, name: String, spawnMode: SpawnMode, cols: Int, rows: Int) throws {
+    init(shell: String, directoryURL: URL, name: String, spawnMode: SpawnMode, cols: Int, rows: Int) throws {
         var window = winsize(
             ws_row: UInt16(clamping: rows), ws_col: UInt16(clamping: cols), ws_xpixel: 0, ws_ypixel: 0)
         var masterFD: Int32 = -1
@@ -42,7 +46,6 @@ final class RemoteControlProcess {
         guard openpty(&masterFD, &slaveFD, nil, nil, &window) == 0 else {
             throw LaunchError.openpty(errno)
         }
-        defer { close(slaveFD) }
 
         var slaveName = [CChar](repeating: 0, count: 128)
         ttyname_r(slaveFD, &slaveName, slaveName.count)
@@ -61,7 +64,6 @@ final class RemoteControlProcess {
         defer { posix_spawnattr_destroy(&attributes) }
         posix_spawnattr_setflags(&attributes, Int16(POSIX_SPAWN_SETSID | POSIX_SPAWN_CLOEXEC_DEFAULT))
 
-        let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
         let arguments = [
             shell, "-l", "-i", "-c", "exec claude \"$@\"", "claude",
             "remote-control", "--name", name, "--spawn", spawnMode.rawValue,
@@ -82,20 +84,27 @@ final class RemoteControlProcess {
         let result = posix_spawn(&childPID, shell, &actions, &attributes, argv, envp)
         guard result == 0 else {
             close(masterFD)
+            close(slaveFD)
             throw LaunchError.spawn(result)
         }
 
         master = masterFD
+        // While this end is open, the process can't finish exiting until its output is read.
+        // Otherwise the kernel discards whatever is still unread after about half a second.
+        slave = slaveFD
         pid = childPID
+        _ = fcntl(slaveFD, F_SETFD, FD_CLOEXEC)
         _ = fcntl(masterFD, F_SETFL, fcntl(masterFD, F_GETFL) | O_NONBLOCK)
         _ = fcntl(masterFD, F_SETFD, FD_CLOEXEC)
 
         readSource = DispatchSource.makeReadSource(fileDescriptor: masterFD, queue: .main)
         exitSource = DispatchSource.makeProcessSource(identifier: childPID, eventMask: .exit, queue: .main)
 
-        readSource.setEventHandler { [weak self] in self?.drain() }
+        // The sources retain this object until the process is reaped, so a process whose owner
+        // has let go of it is still read, killed if it lingers, and reaped.
+        readSource.setEventHandler { self.drain() }
         readSource.setCancelHandler { close(masterFD) }
-        exitSource.setEventHandler { [weak self] in self?.reap() }
+        exitSource.setEventHandler { self.reap() }
         readSource.resume()
         exitSource.resume()
     }
@@ -159,6 +168,7 @@ final class RemoteControlProcess {
         var status: Int32 = 0
         waitpid(pid, &status, 0)
         closed = true
+        close(slave)
         readSource.cancel()
         exitSource.cancel()
         let handler = onExit

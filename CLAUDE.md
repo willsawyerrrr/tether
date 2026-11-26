@@ -39,7 +39,9 @@ toolkit.
 - `macos/` (SwiftPM): `Tether` window and menu bar app. The main window
   (`NavigationSplitView`) lists directories and shows the selected one's live
   terminal, rendered by SwiftTerm. Each server runs on a pseudo-terminal Tether
-  owns for its whole life (`RemoteControlProcess`); output feeds a per-directory
+  owns for its whole life (`RemoteControlProcess`); it holds both ends open until
+  the server is reaped, so a server can't finish exiting with output unread
+  (which the kernel otherwise discards after about half a second). Output feeds a per-directory
   `TerminalSession` that outlives the window. Closing the window leaves Tether
   in the menu bar (Dock icon only while a window is open) with servers running;
   quitting terminates them (`SIGTERM`, then `SIGKILL`). A server that exits
@@ -66,7 +68,8 @@ toolkit.
 macOS: XCTest target `TetherTests` (`macos/Tests/TetherTests/`), run with
 `swift test` from `macos/`. Parsing of `claude remote-control` output lives in
 `OutputParser`, and restart/backoff decisions in `RestartPolicy`, so both can be
-tested without spawning a process.
+tested without spawning a process. Process supervision tests replace the login
+shell (`ManagedDirectory.shell`) with a stand-in script.
 
 ## CI
 
